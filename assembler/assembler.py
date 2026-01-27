@@ -22,7 +22,7 @@ opcodes = {
     "HALT": 0xFF,
 }
 
-# Instructions with 16-bit address operands
+# Instructions that use 16-bit address operands
 addr_instructions = ["JMP", "JZ", "JNZ", "LD", "ST", "PRTSTR"]
 
 # ----------------------------
@@ -49,11 +49,11 @@ def assemble(lines):
 
             # Estimate instruction length
             if mnemonic in ["LDI", "MOV", "ADD", "SUB", "CMP"]:
-                pc += 3  # opcode + 2 operands
+                pc += 3 if mnemonic not in ["INC", "OUT"] else 2
             elif mnemonic in ["INC", "OUT"]:
-                pc += 2  # opcode + 1 operand
+                pc += 2
             elif mnemonic in addr_instructions:
-                pc += 3  # opcode + 16-bit address or 16-bit mem = 3 bytes
+                pc += 3  # base for 16-bit address
                 if mnemonic in ["LD", "ST"]:
                     pc += 1  # extra byte for register
             else:  # NOP, HALT
@@ -68,18 +68,24 @@ def assemble(lines):
         line_bytes = [opcodes[mnemonic]]
 
         if mnemonic == "LDI":
-            line_bytes.append(int(tokens[1][1]))  # R0..R3
-            line_bytes.append(int(tokens[2], 0))  # immediate
+            line_bytes.append(int(tokens[1][1]))  # register
+            line_bytes.append(int(tokens[2], 0))  # immediate value
         elif mnemonic in ["MOV", "ADD", "SUB", "CMP"]:
             line_bytes.append(int(tokens[1][1]))
             line_bytes.append(int(tokens[2][1]))
         elif mnemonic in ["INC", "OUT"]:
             line_bytes.append(int(tokens[1][1]))
         elif mnemonic in ["JMP", "JZ", "JNZ", "PRTSTR"]:
-            label = tokens[1]
-            if label not in labels:
-                raise ValueError(f"Unknown label: {label}")
-            addr = labels[label]
+            operand = tokens[1]
+            # Check if numeric address
+            if operand.startswith("0x"):
+                addr = int(operand, 16)
+            elif operand.isdigit():
+                addr = int(operand)
+            elif operand in labels:
+                addr = labels[operand]
+            else:
+                raise ValueError(f"Unknown label or address: {operand}")
             line_bytes.append(addr & 0xFF)
             line_bytes.append((addr >> 8) & 0xFF)
         elif mnemonic in ["LD", "ST"]:
@@ -92,12 +98,12 @@ def assemble(lines):
             elif addr in labels:
                 addr = labels[addr]
             else:
-                raise ValueError(f"Unknown address: {addr}")
+                raise ValueError(f"Unknown label or address: {addr}")
             line_bytes.append(addr & 0xFF)
             line_bytes.append((addr >> 8) & 0xFF)
         # NOP and HALT have no operands
 
-        bytecode.append(line_bytes)  # keep each instruction as a separate list
+        bytecode.append(line_bytes)
 
     return bytecode
 
