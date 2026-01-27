@@ -124,7 +124,6 @@ HALT
 
 ## Notes
 
-* The emulator currently **does not implement a real 6502**; it uses a simplified instruction set.
 * Supports loops, jumps, and memory-mapped string printing.
 * Designed for educational purposes and experimentation with assembly concepts.
 
