@@ -1,0 +1,1 @@
+python ./assembler/assembler.py ./program/program.asm ./program/program.hex && g++ main.cpp ./cpu/cpu.cpp -o main && ./main ./program/program.hex ./memory/data.txt
