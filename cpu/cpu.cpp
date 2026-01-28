@@ -377,5 +377,5 @@ void CPU::load_memory(const uint8_t *data, size_t size, uint16_t start_addr)
 }
 
 CPU::~CPU(){
-    std::cout << "done\n";
+    std::cout << "\ndone\n";
 }
