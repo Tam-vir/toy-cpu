@@ -64,8 +64,6 @@ draw_pixel:
     JNZ row_loop
 
 ; Trigger VGA present
-; R0 is zero register, so we can't use it
-; Use R1 instead
 LDI R1, 1
 ST R1, 0xFF06
 
