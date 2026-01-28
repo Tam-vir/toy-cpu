@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include "cpu/cpu.hpp"
-
+#include "vga/vga.hpp"
 // Load a hex program into a vector
 bool load_hex_program(const std::string& filename, std::vector<uint8_t>& program) {
     std::ifstream file(filename);
@@ -47,8 +47,8 @@ int main(int argc, char* argv[]) {
         std::cerr << "Usage: " << argv[0] << " <hex_program>.hex <string_file>.txt\n";
         return 1;
     }
-
-    CPU cpu;
+    VGA vga;
+    CPU cpu(&vga);
 
     // Load string from text file into memory at 0x8000
     if (!load_text_to_memory(argv[2], cpu, 0x8000)) return 1;
@@ -59,6 +59,15 @@ int main(int argc, char* argv[]) {
 
     cpu.load_program(program.data(), program.size());
     cpu.run();
+    bool running = true;
+    while (running) {
+        if(cpu.vga_present){
+            running = vga.present();
+        }
+        else
+            running = false;
+        SDL_Delay(16);
+    }
 
     return 0;
 }

@@ -53,6 +53,12 @@ void VGA::init_palette() {
     palette[3] = 0xFF0000FF; // blue
     palette[4] = 0xFFFFFF00; // yellow
     palette[5] = 0xFFFFFFFF; // white
+    palette[6] = 0xFF00FFFF; // cyan
+    palette[7] = 0xFFFF00FF; // pink
+    palette[8] = 0xFF800000; // maroon
+    palette[9] = 0xFF008000; // dark green
+    palette[10] = 0xFF808000; // dark yellow
+
 }
 
 void VGA::clear(uint8_t color) {
@@ -61,8 +67,8 @@ void VGA::clear(uint8_t color) {
 
 void VGA::write(uint32_t addr, uint8_t value) {
     // Framebuffer MMIO
-    if (addr >= 0xF000 && addr < 0xF000 + FB_SIZE) {
-        framebuffer[addr - 0xF000] = value;
+    if (addr >= 0x0000 && addr < FB_SIZE) {
+        framebuffer[addr] = value;
         return;
     }
 
@@ -76,7 +82,7 @@ void VGA::write(uint32_t addr, uint8_t value) {
 }
 
 uint8_t VGA::read(uint16_t addr) {
-    if (addr >= 0xF000 && addr < 0xF000 + FB_SIZE) {
+    if (addr >= 0x0000 && addr < FB_SIZE) {
         return framebuffer[addr];
     }
 
@@ -89,7 +95,7 @@ bool VGA::present() {
 
     SDL_LockTexture(texture, nullptr, (void**)&pixels, &pitch);
 
-    int row_pixels = pitch / 4; // convert bytes → pixels per row
+    int row_pixels = pitch / 4; // convert bytes -> pixels per row
 
     for (int y = 0; y < HEIGHT; y++) {
         uint32_t* row = pixels + y * row_pixels; // start of row
@@ -113,5 +119,3 @@ bool VGA::present() {
 
     return true;
 }
-
-
