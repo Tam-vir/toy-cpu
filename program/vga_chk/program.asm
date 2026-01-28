@@ -8,7 +8,7 @@ LDI R6, 40        ; block size
 LDI R7, 0         ; y counter
 LDI R12, 1        ; for CMP
 LDI R13, 2        ; for MOD
-LDI R14, 0        ; x counter (replaces R15)
+LDI R14, 0        ; x counter
 LDI R15, 0        ; available for temp calculations
 
 row_loop:
