@@ -224,7 +224,7 @@ HALT
 ```
 
 ## Output
-![Checkerboard](image/checkerboard.png)
+![Checkerboard](image/image.png)
 
 
 
