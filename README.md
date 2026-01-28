@@ -1,134 +1,161 @@
-# Custom 8-bit CPU Emulator
+# Custom 16-bit CPU Emulator with VGA
 
-A simple 8-bit CPU emulator in C++ with **memory-mapped I/O (MMIO)**, supporting basic instructions, string printing, and program loading from `.hex` files. This project demonstrates how CPUs, memory, and I/O interact at a low level.
+A **16-bit CPU emulator written in C++** with **memory-mapped I/O (MMIO)** and a simple **VGA graphics device** implemented using SDL2.  
+This project is built for learning and experimentation with CPU design, instruction sets, MMIO, and basic graphics rendering.
 
 ---
 
 ## Features
 
-* 4 general-purpose 8-bit registers (R0–R3)
-* 16-bit program counter
-* Zero flag (Z)
-* Static 64KB memory
-* Supported instructions:
+### CPU
+- 16-bit architecture
+- 16 general-purpose registers (**R0–R15**)
+  - **R0 is a zero register (hardwired to value 0)**
+- 16-bit program counter
+- Zero flag (**Z**)
+- 64KB system memory
+- 64KB VRAM
+- Arithmetic overflow / underflow checks
+- Register-based and immediate addressing
+- Memory-mapped I/O support
 
-| Opcode | Instruction | Description                                        |
-| ------ | ----------- | -------------------------------------------------- |
-| 0x00   | NOP         | No operation                                       |
-| 0x01   | LDI r, imm  | Load immediate value into register                 |
-| 0x02   | MOV r1, r2  | Copy value from one register to another            |
-| 0x03   | ADD r1, r2  | Add two registers                                  |
-| 0x04   | SUB r1, r2  | Subtract two registers                             |
-| 0x05   | JMP addr    | Jump to address                                    |
-| 0x06   | JZ addr     | Jump if zero flag set                              |
-| 0x07   | CMP r1,r2   | Compare registers (sets Z)                         |
-| 0x08   | LD r, addr  | Load from memory to register                       |
-| 0x09   | ST r, addr  | Store register to memory (supports MMIO at 0xFF00) |
-| 0x0A   | OUT r       | Print register as number                           |
-| 0x0B   | INC r       | Increment register                                 |
-| 0x0C   | JNZ addr    | Jump if zero flag not set                          |
-| 0x0D   | PRTSTR addr | Print null-terminated string from memory           |
-| 0xFF   | HALT        | Stop execution                                     |
-
-* **Memory-mapped output**: Writing to `0xFF00` prints a character.
-* Programs and strings can be loaded from files.
+### VGA
+- Resolution: **320 × 200**
+- 8-bit indexed color framebuffer
+- 256-color palette
+- SDL2-based rendering
+- Memory-mapped framebuffer access
 
 ---
 
-## Folder Structure
+## Instruction Set
+
+| Opcode | Instruction | Description |
+|------:|------------|------------|
+| 0x00 | NOP | No operation |
+| 0x01 | LDI r, imm8 | Load immediate (low byte) |
+| 0x13 | LUI r, imm8 | Load immediate (high byte) |
+| 0x02 | MOV r1, r2 | Copy register |
+| 0x03 | ADD r1, r2 | Add registers |
+| 0x04 | SUB r1, r2 | Subtract registers |
+| 0x05 | JMP addr | Jump to address |
+| 0x06 | JZ addr | Jump if zero |
+| 0x0C | JNZ addr | Jump if not zero |
+| 0x07 | CMP r1, r2 | Compare registers |
+| 0x08 | LD r, addr | Load from memory |
+| 0x09 | ST r, addr | Store to memory / MMIO |
+| 0x11 | LD r1, r2 | Load from address in register |
+| 0x12 | ST r1, r2 | Store to address in register |
+| 0x0E | MUL r1, r2 | Multiply registers |
+| 0x0F | DIV r1, r2 | Divide registers |
+| 0x10 | MOD r1, r2 | Modulo |
+| 0x0B | INC r | Increment register |
+| 0x0A | OUT r | Print register value |
+| 0x14 | JMPR r | Jump to address in register |
+| 0x15 | JZR r | Jump if zero (register) |
+| 0x16 | JNZR r | Jump if not zero (register) |
+| 0x0D | PRTSTR addr | Print null-terminated string |
+| 0xFF | HALT | Stop execution |
+
+---
+
+## Memory-Mapped I/O
+
+### CPU MMIO Addresses
+
+| Address | Function |
+|-------:|---------|
+| 0xFF00 | Output character (low byte) |
+| 0xFF01 | VRAM address low byte |
+| 0xFF02 | VRAM address high byte |
+| 0xFF03 | Write pixel to VRAM |
+| 0xFF06 | Trigger VGA present |
+
+### VGA MMIO
+
+| Address | Function |
+|-------:|---------|
+| 0x0000–FB_SIZE | Framebuffer |
+| 0xFF10 | Present framebuffer |
+
+---
+
+## VGA Details
+
+- Resolution: **320 × 200**
+- Framebuffer layout:  
+  `address = y * WIDTH + x`
+- Each pixel stores an 8-bit color index
+- Palette includes grayscale and predefined colors
+
+---
+
+## Project Structure
 
 ```
 .
 ├── assembler
-│   └── assembler.py       # Python assembler to convert .asm → .hex
+│   └── assembler.py
 ├── cpu
-│   ├── cpu.cpp            # CPU implementation
-│   └── cpu.hpp            # CPU class definition
-├── main.cpp               # Emulator main program
-├── memory
-│   └── data.txt           # String data to load into memory
+│   ├── cpu.cpp
+│   └── cpu.hpp
+├── vga
+│   ├── vga.cpp
+│   └── vga.hpp
 ├── program
-│   ├── program.asm        # Example assembly program
-│   └── program.hex        # Assembled bytecode
-└── run.sh                 # Optional script to compile and run
+│   └── <program_name>
+│         ├── program.asm
+│         └── program.hex
+├── memory
+│   └── data.txt
+├── main.cpp
+└── README.md
 ```
 
 ---
 
-## Getting Started
+## Build Requirements
 
-### Requirements
+- C++17 compatible compiler
+- SDL2 development libraries
+- Python 3 (for the assembler)
 
-* C++17 compatible compiler (`g++`, `clang++`)
-* Python 3 (for assembler)
+---
 
-### Compile the Emulator
+## Assemble
+```bash
+python ./assembler/assembler.py ./program/<program_name>/program.asm ./program/<program_name>/program.hex
+```
+
+
+
+## Build
 
 ```bash
-g++ main.cpp cpu/cpu.cpp -o main
+g++ main.cpp ./cpu/cpu.cpp ./vga/vga.cpp -o main $(sdl2-config --cflags) $(sdl2-config --libs) -lSDL2 -lSDL2main
 ```
 
-### Assemble a Program
+---
+
+## Run
 
 ```bash
-python assembler/assembler.py program/program.asm program/program.hex
-```
-
-* Generates a `.hex` file for the emulator.
-* Each instruction is separated by a line break in the hex file.
-
-### Load Memory from Text File
-
-Place your string in `memory/data.txt`. The emulator loads it into memory at `0x8000`.
-
-Example `data.txt`:
-
-```
-Hello, World!
-This is Tam :3
+./main ./program/<program_name>/program.hex ./memory/data.txt
 ```
 
 ---
 
-## Run the Emulator
-
-```bash
-./main program/program.hex memory/data.txt
-```
-
-* `program.hex`: the assembled instructions
-* `data.txt`: string to load into memory
-
----
-
-## Example Assembly Program (`program.asm`)
-
-```asm
-; Print string from memory using MMIO
-LDI R0, 0        ; offset/index
-LDI R3, 0        ; null terminator
-
-loop:
-LD R2, 0x8000    ; load char
-CMP R2, R3
-JZ end
-ST R2, 0xFF00    ; print char
-INC R0
-JMP loop
-
-end:
-HALT
-```
-
----
+**Each example has a run.sh script for easy execution.**
 
 ## Notes
 
-* Supports loops, jumps, and memory-mapped string printing.
-* Designed for educational purposes and experimentation with assembly concepts.
+- R0 always reads as **0**
+- Division by zero and arithmetic overflow halt execution
+- VGA output is immediate and software-rendered
+- Designed for educational and experimental purposes
 
 ---
 
 ## License
 
-MIT License © Tamvir Shahabuddin
+MIT License  © Tamvir Adar
